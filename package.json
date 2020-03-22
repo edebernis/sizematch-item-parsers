@@ -4,6 +4,7 @@
     "description": "Scrape IKEA product urls",
     "author": "Emeric de Bernis <emeric.debernis@gmail.com>",
     "main": "src/main.js",
+    "private": true,
     "scripts": {
         "start": "node src/main.js",
         "unit": "jest --config test/unit/jest.conf.js --coverage",
@@ -11,6 +12,7 @@
         "lint": "jshint -e .js src test/unit"
     },
     "dependencies": {
+        "amqplib": "^0.5.5",
         "puppeteer": "^2.1.1"
     },
     "devDependencies": {
