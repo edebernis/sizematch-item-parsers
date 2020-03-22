@@ -4,22 +4,39 @@ services:
     image: "rabbitmq:3.8-management-alpine"
     ports:
       - 8080:15672
+    restart: unless-stopped
     environment:
       - RABBITMQ_DEFAULT_USER=user
       - RABBITMQ_DEFAULT_PASS=password
+  elasticsearch:
+    image: elasticsearch:7.6.1
+    ports:
+      - 9200:9200
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - ELASTIC_PASSWORD=password
   app:
     build: .
     depends_on:
       - rabbitmq
+      - elasticsearch
     cap_add:
       - SYS_ADMIN
+    restart: unless-stopped
     environment:
-      - CHROMIUM_PATH=/usr/bin/chromium-browser
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USERNAME=user
       - RABBITMQ_PASSWORD=password
       - QUEUE_NAME=ikea
-      - CONSUME_INTERVAL=1000
+      - PARSER_NAME=ikea
+      - BROWSER_PATH=/usr/bin/chromium-browser
+      - FETCH_PAGE_TIMEOUT=30000
+      - INTERVAL=1000
+      - ELASTIC_HOST=elasticsearch
+      - ELASTIC_PORT=9200
+      - ELASTIC_USERNAME=elastic
+      - ELASTIC_PASSWORD=password
     volumes:
       - ${PWD}/src:/app/src

@@ -2,37 +2,16 @@
 
 'use strict';
 
-const puppeteer = require('puppeteer');
 const consumer_lib = require('./consumer');
-
-
-async function parse(browser, obj) {
-    const page = await browser.newPage();
-    await page.goto(obj.url);
-}
-
-
-async function consume(connection, browser) {
-    try {
-        const obj = await connection.get();
-        if (obj) await parse(browser, obj);
-    } catch (e) {
-        console.log(e);
-        console.log('Failed to consume or process message');
-    }
-}
+const parser_lib = require('./parsers');
+const db_lib = require('./db');
 
 
 (async () => {
-    var browser, consumer;
+    var consumer, parser, db, intervalId;
 
     try {
-        browser = await puppeteer.launch({
-            executablePath: process.env.CHROMIUM_PATH,
-            args: ['--disable-dev-shm-usage']
-        });
-
-        consumer = await consumer_lib.connect(
+        consumer = await consumer_lib.load(
             process.env.RABBITMQ_HOST || '',
             process.env.RABBITMQ_PORT || 5672,
             process.env.RABBITMQ_USERNAME || '',
@@ -43,19 +22,42 @@ async function consume(connection, browser) {
             process.env.QUEUE_NAME
         );
 
-        const intervalId = setInterval(function () {
-            consume(consumer, browser);
-        }, process.env.CONSUME_INTERVAL || 1000);
-
-        process.on('SIGTERM', async () => {
-            console.info('SIGTERM signal received. Exiting');
-            clearInterval(intervalId);
-            await consumer.close();
-            await browser.close();
+        parser = await parser_lib.load(process.env.PARSER_NAME, {
+            browserPath: process.env.BROWSER_PATH || '/usr/bin/chromium-browser',
+            fetchPageTimeout: process.env.FETCH_PAGE_TIMEOUT || 30000
         });
 
+        db = db_lib.load(
+            process.env.ELASTIC_HOST || '',
+            process.env.ELASTIC_PORT || 9200,
+            process.env.ELASTIC_USERNAME || '',
+            process.env.ELASTIC_PASSWORD || '',
+            process.env.ELASTIC_MAX_RETRIES || 3,
+            process.env.ELASTIC_REQUEST_TIMEOUT || 30000,
+        );
+
+        process.on('SIGTERM', async () => {
+            console.info('SIGTERM signal received. Exiting.');
+            clearInterval(intervalId);
+            await parser.close();
+            await consumer.close();
+        });
+
+        intervalId = setInterval(async function () {
+
+            try {
+                const obj = await consumer.get();
+                if (obj) {
+                    const item = await parser.parse(obj);
+                    await db.store(item);
+                }
+            } catch (e) {console.log(e);}
+
+        }, process.env.INTERVAL || 1000);
+
     } catch (e) {
+        console.log(e);
+        if(parser) await parser.close();
         if(consumer) await consumer.close();
-        if(browser) await browser.close();
     }
 })();

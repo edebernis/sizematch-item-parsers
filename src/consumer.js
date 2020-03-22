@@ -31,10 +31,13 @@ class Consumer {
         });
 
         this.channel = await this.connection.createChannel();
-        await this.channel.checkQueue(this.queueName);
-
         this.channel.on('close', this.onChannelClosed);
         this.channel.on('error', this.onChannelError);
+
+        await this.channel.assertQueue(this.queueName, {
+            durable: false,
+            autoDelete: true
+        });
     }
 
     onChannelClosed() {
@@ -47,11 +50,8 @@ class Consumer {
     }
 
     async get() {
-        const msg = await this.channel.get(this.queueName);
-        if (msg) {
-            await this.channel.ack(msg);
-            return msg.content;
-        }
+        const msg = await this.channel.get(this.queueName, {noAck: true});
+        if (msg) return JSON.parse(msg.content);
     }
 
     async close() {
@@ -60,30 +60,30 @@ class Consumer {
 }
 
 
-async function _connect(consumer, connection_attempts, connection_interval=5000) {
+async function connect(consumer, connectionAttempts, connectionInterval=5000) {
     try {
         await consumer.connect();
         return consumer;
     } catch (e) {
         console.log(e);
         console.log('Failed to connect to RabbitMQ. Retrying.');
-        connection_attempts -= 1;
+        connectionAttempts -= 1;
 
-        if (connection_attempts < 1) {
+        if (connectionAttempts < 1) {
             console.log('All retries failed.');
             throw e;
         }
 
-        await new Promise(resolve => setTimeout(resolve, connection_interval));
-        return _connect(consumer, connection_attempts);
+        await new Promise(resolve => setTimeout(resolve, connectionInterval));
+        return connect(consumer, connectionAttempts);
     }
 }
 
 
-async function connect(hostname, port, username, password, vhost, heartbeat, connection_attempts, queueName) {
+async function load(hostname, port, username, password, vhost, heartbeat, connectionAttempts, queueName) {
     const consumer = new Consumer(hostname, port, username, password, vhost, heartbeat, queueName);
-    return await _connect(consumer, connection_attempts);
+    return await connect(consumer, connectionAttempts);
 }
 
 
-module.exports = {connect: connect};
+module.exports = {load: load};

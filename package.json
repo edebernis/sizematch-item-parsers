@@ -12,6 +12,7 @@
         "lint": "jshint -e .js src test/unit"
     },
     "dependencies": {
+        "@elastic/elasticsearch": "^7.6.1",
         "amqplib": "^0.5.5",
         "puppeteer": "^2.1.1"
     },
