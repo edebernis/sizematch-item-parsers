@@ -31,4 +31,4 @@ RUN npm ci --only=production
 
 COPY . .
 
-CMD [ "node", "src/main.js" ]
+CMD [ "node", "src/index.js" ]

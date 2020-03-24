@@ -3,10 +3,10 @@
     "version": "0.0.1",
     "description": "Scrape IKEA product urls",
     "author": "Emeric de Bernis <emeric.debernis@gmail.com>",
-    "main": "src/main.js",
+    "main": "src/index.js",
     "private": true,
     "scripts": {
-        "start": "node src/main.js",
+        "start": "node src/index.js",
         "unit": "jest --config test/unit/jest.conf.js --coverage",
         "test": "npm run unit",
         "lint": "jshint -e .js src test/unit"
