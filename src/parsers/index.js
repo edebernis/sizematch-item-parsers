@@ -6,9 +6,10 @@ const puppeteer = require('puppeteer');
 
 
 class Item {
-    constructor(id, source, dimensions, metadata) {
+    constructor(id, source, lang, dimensions, metadata) {
         this.id = id;
         this.source = source;
+        this.lang = lang;
         this.dimensions = dimensions;
         this.metadata = metadata;
     }

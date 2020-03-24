@@ -37,6 +37,7 @@ class DB {
             id: `${item.source}-${item.id}`,
             index: this.getIndex(item),
             body: {
+                lang: item.lang,
                 dimensions: item.dimensions,
                 meta: item.metadata
             }
