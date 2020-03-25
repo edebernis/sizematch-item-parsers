@@ -25,9 +25,13 @@ class Parser {
     static async create(parser, config) {
         const browser = await puppeteer.launch({
             executablePath: config.browserPath,
-            args: ['--disable-dev-shm-usage']
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-gpu',
+                '--disable-dev-shm-usage'
+            ]
         });
-
         return new parser(config, browser);
     }
 

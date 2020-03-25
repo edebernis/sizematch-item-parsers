@@ -7,8 +7,21 @@ const parser_lib = require('./parsers');
 const db_lib = require('./db');
 
 
+async function run(consumer, parser, db) {
+    try {
+        const obj = await consumer.get();
+        if (obj) {
+            const item = await parser.parse(obj);
+            await db.store(item);
+        }
+    } catch (e) {console.log(e);}
+
+    setImmediate(() => run(consumer, parser, db));
+}
+
+
 (async () => {
-    var consumer, parser, db, intervalId;
+    var consumer, parser, db;
 
     try {
         consumer = await consumer_lib.load(
@@ -38,26 +51,15 @@ const db_lib = require('./db');
 
         process.on('SIGTERM', async () => {
             console.info('SIGTERM signal received. Exiting.');
-            clearInterval(intervalId);
             await parser.close();
             await consumer.close();
         });
 
-        intervalId = setInterval(async function () {
-
-            try {
-                const obj = await consumer.get();
-                if (obj) {
-                    const item = await parser.parse(obj);
-                    await db.store(item);
-                }
-            } catch (e) {console.log(e);}
-
-        }, process.env.INTERVAL || 1000);
+        setImmediate(() => run(consumer, parser, db));
 
     } catch (e) {
         console.log(e);
-        if(parser) await parser.close();
-        if(consumer) await consumer.close();
+        if (parser) await parser.close();
+        if (consumer) await consumer.close();
     }
 })();
