@@ -7,20 +7,24 @@ const parser_lib = require('./parsers');
 
 
 async function run(consumer, parser) {
+    let msg;
+
     try {
-        const obj = await consumer.get();
-        if (obj) {
-            const item = await parser.fetch_and_parse(obj);
+        msg = await consumer.get();
+        if (msg) {
+            const item = await parser.fetch_and_parse(JSON.parse(msg.content));
+            consumer.ack(msg);
             console.log(item);
         }
-    } catch (e) {console.log(e);}
-
-    setImmediate(() => run(consumer, parser));
+    } catch (e) {
+        console.log(e);
+        if (msg) consumer.nack(msg);
+    }
 }
 
 
 (async () => {
-    var consumer, parser;
+    let consumer, parser, intervalId;
 
     try {
         consumer = await consumer_lib.load(
@@ -31,7 +35,8 @@ async function run(consumer, parser) {
             process.env.RABBITMQ_VHOST || '',
             process.env.RABBITMQ_HEARTBEAT || 60,
             process.env.RABBITMQ_CONNECTION_ATTEMPTS || 5,
-            process.env.QUEUE_NAME
+            process.env.QUEUE_NAME,
+            process.env.PREFETCH_COUNT || 1
         );
 
         parser = await parser_lib.load(process.env.PARSER_NAME, {
@@ -43,13 +48,15 @@ async function run(consumer, parser) {
 
         process.on('SIGTERM', async () => {
             console.info('SIGTERM signal received. Exiting.');
-            await consumer.close();
+            clearInterval(intervalId);
+            consumer.close();
         });
 
-        setImmediate(() => run(consumer, parser));
+        intervalId = setInterval( function() { run(consumer, parser); }, process.env.INTERVAL || 1000);
 
     } catch (e) {
         console.log(e);
-        if (consumer) await consumer.close();
+        if (intervalId) clearInterval(intervalId);
+        if (consumer) consumer.close();
     }
 })();

@@ -32,7 +32,7 @@ class Parser {
     }
 
     async fetch_and_parse(obj) {
-        let browser, page = null;
+        let browser, page;
 
         try {
             browser = await puppeteer.connect({

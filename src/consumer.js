@@ -6,7 +6,7 @@ var amqp = require('amqplib');
 
 
 class Consumer {
-    constructor(hostname, port, username, password, vhost, heartbeat, queueName) {
+    constructor(hostname, port, username, password, vhost, heartbeat, queueName, prefetchCount) {
         this.hostname = hostname;
         this.port = port;
         this.username = username;
@@ -14,6 +14,7 @@ class Consumer {
         this.vhost = vhost;
         this.heartbeat = heartbeat;
         this.queueName = queueName;
+        this.prefetchCount = prefetchCount;
 
         this.connection = null;
         this.channel = null;
@@ -38,6 +39,7 @@ class Consumer {
             durable: false,
             autoDelete: true
         });
+        await this.channel.prefetch(this.prefetchCount);
     }
 
     onChannelClosed() {
@@ -50,8 +52,15 @@ class Consumer {
     }
 
     async get() {
-        const msg = await this.channel.get(this.queueName, {noAck: true});
-        if (msg) return JSON.parse(msg.content);
+        return await this.channel.get(this.queueName, {noAck: false});
+    }
+
+    async ack(msg) {
+        await this.channel.ack(msg);
+    }
+
+    async nack(msg) {
+        await this.channel.nack(msg);
     }
 
     async close() {
