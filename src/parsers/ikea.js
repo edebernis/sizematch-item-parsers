@@ -3,26 +3,24 @@
 'use strict';
 
 const { Parser, Item } = require('./');
-const SOURCE = 'ikea';
+const source = 'ikea';
 
 
 class IKEAParser extends Parser {
-
-    async parse(obj) {
-        const page = await this.browser.newPage();
-
+    async parse(page, obj) {
         await page.goto(obj.urls[0], {
             timeout: this.config.fetchPageTimeout,
             waitUntil: 'networkidle2'
         });
 
+        const schemaOrg = await this.parseJSONLD(page);
         const metadata = await page.evaluate('utag_data');
-        const dimensions = await this.DLtoObj(page, '#pip_dimensions');
-        const id = metadata.product_ids[0];
+        const dimensions = await this.parseDL(page, '#pip_dimensions');
 
-        await page.close();
-
-        return new Item(id, SOURCE, obj.lang, dimensions, metadata);
+        return new Item(
+            metadata.product_ids[0], source, schemaOrg.name, schemaOrg.description, [metadata.category_local],
+            obj.lang, obj.urls, schemaOrg.image, dimensions, schemaOrg.offers.price, schemaOrg.offers.priceCurrency
+        );
     }
 }
 

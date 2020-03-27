@@ -6,57 +6,73 @@ const puppeteer = require('puppeteer');
 
 
 class Item {
-    constructor(id, source, lang, dimensions, metadata) {
+    constructor(id, source, name, description, categories, lang, urls, image_urls, dimensions, price, priceCurrency) {
         this.id = id;
         this.source = source;
+        this.name = name;
+        this.description = description;
+        this.categories = categories;
         this.lang = lang;
+        this.urls = urls;
+        this.image_urls = image_urls;
         this.dimensions = dimensions;
-        this.metadata = metadata;
+        this.price = price;
+        this.priceCurrency = priceCurrency;
     }
 }
 
 
 class Parser {
-    constructor(config, browser) {
+    constructor(config) {
         this.config = config;
-        this.browser = browser;
     }
 
     static async create(parser, config) {
-        const browser = await puppeteer.launch({
-            executablePath: config.browserPath,
-            args: [
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-gpu',
-                '--disable-dev-shm-usage'
-            ]
-        });
-        return new parser(config, browser);
+        return new parser(config);
     }
 
-    async parse(obj) {
+    async fetch_and_parse(obj) {
+        let browser, page = null;
+
+        try {
+            browser = await puppeteer.connect({
+                browserWSEndpoint: `ws://${ this.config.browserlessHost }:${ this.config.browserlessPort }?token=${ this.config.browserlessToken }`
+            });
+            const page = await browser.newPage();
+            return await this.parse(page, obj);
+
+        } finally {
+            if (page) await page.close();
+            if (browser) await browser.disconnect();
+        }
+    }
+
+    async parse(page, obj) {
         throw new Error('Not Implemented');
     }
 
-    async DLtoObj(page, selector) {
-        const handles = await page.$$(`${selector} dt, ${selector} dd`);
-        if (handles.length % 2 != 0) throw new Error('Invalid DL');
+    async parseJSONLD(page) {
+        const html = await page.evaluate(() => {
+            const ld = document.querySelector('script[type="application/ld+json"]'); // jshint ignore:line
+            return ld.innerHTML;
+        });
+        return JSON.parse(html);
+    }
 
-        var elements = [];
-        await Promise.all(handles.map(async (handle) => {
-            const text = await page.evaluate(el => el.innerText, handle);
-            elements.push(text.trim());
-        }));
+    async parseDL(page, selector) {
+        const dl = await page.evaluate((selector) => {
+            var elements = Array.from(
+                document.querySelectorAll(`${selector} dt, ${selector} dd`) // jshint ignore:line
+            );
+            return elements.map(el => el.innerText);
+        }, selector);
 
-        return elements.reduce((acc, cur, idx, src) => {
+        if (dl.length % 2 != 0) throw new Error('Invalid DL');
+
+        return dl.reduce((acc, cur, idx, src) => {
             if (idx % 2 == 0) acc[cur] = src[idx+1];
             return acc;
         }, {});
-    }
-
-    async close() {
-        await this.browser.close();
     }
 }
 

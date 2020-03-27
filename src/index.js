@@ -4,24 +4,23 @@
 
 const consumer_lib = require('./consumer');
 const parser_lib = require('./parsers');
-const db_lib = require('./db');
 
 
-async function run(consumer, parser, db) {
+async function run(consumer, parser) {
     try {
         const obj = await consumer.get();
         if (obj) {
-            const item = await parser.parse(obj);
-            await db.store(item);
+            const item = await parser.fetch_and_parse(obj);
+            console.log(item);
         }
     } catch (e) {console.log(e);}
 
-    setImmediate(() => run(consumer, parser, db));
+    setImmediate(() => run(consumer, parser));
 }
 
 
 (async () => {
-    var consumer, parser, db;
+    var consumer, parser;
 
     try {
         consumer = await consumer_lib.load(
@@ -36,30 +35,21 @@ async function run(consumer, parser, db) {
         );
 
         parser = await parser_lib.load(process.env.PARSER_NAME, {
-            browserPath: process.env.BROWSER_PATH || '/usr/bin/chromium-browser',
+            browserlessHost: process.env.BROWSERLESS_HOST,
+            browserlessPort: process.env.BROWSERLESS_PORT || 3000,
+            browserlessToken: process.env.BROWSERLESS_TOKEN,
             fetchPageTimeout: process.env.FETCH_PAGE_TIMEOUT || 30000
         });
 
-        db = db_lib.load(
-            process.env.ELASTIC_HOST || '',
-            process.env.ELASTIC_PORT || 9200,
-            process.env.ELASTIC_USERNAME || '',
-            process.env.ELASTIC_PASSWORD || '',
-            process.env.ELASTIC_MAX_RETRIES || 3,
-            process.env.ELASTIC_REQUEST_TIMEOUT || 30000,
-        );
-
         process.on('SIGTERM', async () => {
             console.info('SIGTERM signal received. Exiting.');
-            await parser.close();
             await consumer.close();
         });
 
-        setImmediate(() => run(consumer, parser, db));
+        setImmediate(() => run(consumer, parser));
 
     } catch (e) {
         console.log(e);
-        if (parser) await parser.close();
         if (consumer) await consumer.close();
     }
 })();

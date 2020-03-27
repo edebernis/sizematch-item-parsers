@@ -8,19 +8,29 @@ services:
     environment:
       - RABBITMQ_DEFAULT_USER=user
       - RABBITMQ_DEFAULT_PASS=password
-  elasticsearch:
-    image: elasticsearch:7.6.1
+  browserless:
+    image: browserless/chrome:1.29-puppeteer-2.1.1
     ports:
-      - 9200:9200
+      - 3000:3000
     restart: unless-stopped
     environment:
-      - discovery.type=single-node
-      - ELASTIC_PASSWORD=password
+      - MAX_CONCURRENT_SESSIONS=2
+      - CONNECTION_TIMEOUT=30000
+      - MAX_QUEUE_LENGTH=2
+      - PREBOOT_CHROME=true
+      - KEEP_ALIVE=true
+      - WORKSPACE_DELETE_EXPIRED=true
+      - WORKSPACE_EXPIRE_DAYS=1
+      - ENABLE_DEBUGGER=false
+      - TOKEN=598ec0ed-da0b-4006-b132-47120c12ce83
+      - DEBUG=browserless/chrome*
+      - EXIT_ON_HEALTH_FAILURE=true
+      - DEFAULT_BLOCK_ADS=true
+      - DEFAULT_IGNORE_HTTPS_ERRORS=true
   app:
     build: .
     depends_on:
       - rabbitmq
-      - elasticsearch
     cap_add:
       - SYS_ADMIN
     restart: unless-stopped
@@ -31,11 +41,9 @@ services:
       - RABBITMQ_PASSWORD=password
       - QUEUE_NAME=ikea
       - PARSER_NAME=ikea
-      - BROWSER_PATH=/usr/bin/chromium-browser
+      - BROWSERLESS_HOST=browserless
+      - BROWSERLESS_PORT=3000
+      - BROWSERLESS_TOKEN=598ec0ed-da0b-4006-b132-47120c12ce83
       - FETCH_PAGE_TIMEOUT=30000
-      - ELASTIC_HOST=elasticsearch
-      - ELASTIC_PORT=9200
-      - ELASTIC_USERNAME=elastic
-      - ELASTIC_PASSWORD=password
     volumes:
       - ${PWD}/src:/app/src
