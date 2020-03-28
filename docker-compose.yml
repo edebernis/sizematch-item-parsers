@@ -40,7 +40,7 @@ services:
       - RABBITMQ_USERNAME=user
       - RABBITMQ_PASSWORD=password
       - RABBITMQ_APP_ID=sizematch-ikea-scraper
-      - CONSUMER_QUEUE_NAME=sizematch-ikea
+      - CONSUMER_QUEUE_NAME=sizematch-scraper-ikea
       - PREFETCH_COUNT=2
       - PARSER_NAME=ikea
       - PUBLISHER_EXCHANGE_NAME=sizematch-items
