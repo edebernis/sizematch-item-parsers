@@ -3,7 +3,6 @@
 'use strict';
 
 const { Parser, Item } = require('./');
-const source = 'ikea';
 
 
 class IKEAParser extends Parser {
@@ -18,7 +17,7 @@ class IKEAParser extends Parser {
         const dimensions = await this.parseDL(page, '#pip_dimensions');
 
         return new Item(
-            metadata.product_ids[0], source, schemaOrg.name, schemaOrg.description, [metadata.category_local],
+            metadata.product_ids[0], obj.source, schemaOrg.name, schemaOrg.description, [metadata.category_local],
             obj.lang, obj.urls, schemaOrg.image, dimensions, schemaOrg.offers.price, schemaOrg.offers.priceCurrency
         );
     }
