@@ -2,32 +2,42 @@
 
 'use strict';
 
-const consumer_lib = require('./consumer');
+const messenger_lib = require('./messenger');
 const parser_lib = require('./parsers');
 
 
-async function run(consumer, parser) {
+async function run(messenger, parser) {
     let msg;
 
     try {
-        msg = await consumer.get();
+        msg = await messenger.get();
         if (msg) {
             const item = await parser.fetch_and_parse(JSON.parse(msg.content));
-            consumer.ack(msg);
-            console.log(item);
+            const isWritten = messenger.publish(item, function(err, ok) {
+                if (err !== null) {
+                    console.log(err);
+                    messenger.nack(msg);
+                }
+                else
+                    messenger.ack(msg);
+            });
+            if (!isWritten) {
+                console.log('Publisher buffer full');
+                messenger.nack(msg);
+            }
         }
     } catch (e) {
         console.log(e);
-        if (msg) consumer.nack(msg);
+        if (msg) messenger.nack(msg);
     }
 }
 
 
 (async () => {
-    let consumer, parser, intervalId;
+    let messenger, parser, intervalId;
 
     try {
-        consumer = await consumer_lib.load(
+        messenger = await messenger_lib.load(
             process.env.RABBITMQ_HOST || '',
             process.env.RABBITMQ_PORT || 5672,
             process.env.RABBITMQ_USERNAME || '',
@@ -35,8 +45,18 @@ async function run(consumer, parser) {
             process.env.RABBITMQ_VHOST || '',
             process.env.RABBITMQ_HEARTBEAT || 60,
             process.env.RABBITMQ_CONNECTION_ATTEMPTS || 5,
-            process.env.QUEUE_NAME,
+            process.env.RABBITMQ_APP_ID
+        );
+
+        await messenger.setupConsumer(
+            process.env.CONSUMER_QUEUE_NAME,
             process.env.PREFETCH_COUNT || 1
+        );
+
+        await messenger.setupPublisher(
+            process.env.PUBLISHER_EXCHANGE_NAME,
+            process.env.PUBLISHER_ROUTING_KEY,
+            process.env.PUBLISHER_QUEUE_NAME
         );
 
         parser = await parser_lib.load(process.env.PARSER_NAME, {
@@ -48,15 +68,15 @@ async function run(consumer, parser) {
 
         process.on('SIGTERM', async () => {
             console.info('SIGTERM signal received. Exiting.');
-            clearInterval(intervalId);
-            consumer.close();
+            if (intervalId) clearInterval(intervalId);
+            if (messenger) messenger.close();
         });
 
-        intervalId = setInterval( function() { run(consumer, parser); }, process.env.INTERVAL || 1000);
+        intervalId = setInterval( function() { run(messenger, parser); }, process.env.INTERVAL || 1000);
 
     } catch (e) {
         console.log(e);
         if (intervalId) clearInterval(intervalId);
-        if (consumer) consumer.close();
+        if (messenger) messenger.close();
     }
 })();

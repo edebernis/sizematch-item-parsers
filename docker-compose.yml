@@ -39,13 +39,15 @@ services:
       - RABBITMQ_PORT=5672
       - RABBITMQ_USERNAME=user
       - RABBITMQ_PASSWORD=password
-      - QUEUE_NAME=ikea
+      - RABBITMQ_APP_ID=sizematch-ikea-scraper
+      - CONSUMER_QUEUE_NAME=sizematch-ikea
       - PREFETCH_COUNT=2
       - PARSER_NAME=ikea
+      - PUBLISHER_EXCHANGE_NAME=sizematch-items
+      - PUBLISHER_ROUTING_KEY=items.normalize
+      - PUBLISHER_QUEUE_NAME=sizematch-normalizer
       - BROWSERLESS_HOST=browserless
       - BROWSERLESS_PORT=3000
       - BROWSERLESS_TOKEN=598ec0ed-da0b-4006-b132-47120c12ce83
-      - FETCH_PAGE_TIMEOUT=30000
-      - INTERVAL=1000
     volumes:
       - ${PWD}/src:/app/src
