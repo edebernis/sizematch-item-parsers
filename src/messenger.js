@@ -67,8 +67,8 @@ class Messenger {
         };
     }
 
-    async get() {
-        return await this.channel.get(this.consumer.queueName, {noAck: false});
+    async consume(callback) {
+        return await this.channel.consume(this.consumer.queueName, callback, {noAck: false});
     }
 
     async ack(msg) {

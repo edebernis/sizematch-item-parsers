@@ -7,34 +7,26 @@ const parser_lib = require('./parsers');
 
 
 async function run(messenger, parser) {
-    let msg;
-
-    try {
-        msg = await messenger.get();
-        if (msg) {
-            const item = await parser.fetch_and_parse(JSON.parse(msg.content));
-            const isWritten = messenger.publish(item, function(err, ok) {
-                if (err !== null) {
-                    console.log(err);
-                    messenger.nack(msg);
-                }
-                else
-                    messenger.ack(msg);
-            });
-            if (!isWritten) {
-                console.log('Publisher buffer full');
+    await messenger.consume(async (msg) => {
+        const item = await parser.fetch_and_parse(JSON.parse(msg.content));
+        const isWritten = messenger.publish(item, function(err, ok) {
+            if (err !== null) {
+                console.log(err);
                 messenger.nack(msg);
             }
+            else
+                messenger.ack(msg);
+        });
+        if (!isWritten) {
+            console.log('Publisher buffer full');
+            messenger.nack(msg);
         }
-    } catch (e) {
-        console.log(e);
-        if (msg) messenger.nack(msg);
-    }
+    });
 }
 
 
 (async () => {
-    let messenger, parser, intervalId;
+    let messenger, parser;
 
     try {
         messenger = await messenger_lib.load(
@@ -68,15 +60,13 @@ async function run(messenger, parser) {
 
         process.on('SIGTERM', async () => {
             console.info('SIGTERM signal received. Exiting.');
-            if (intervalId) clearInterval(intervalId);
             if (messenger) messenger.close();
         });
 
-        intervalId = setInterval( function() { run(messenger, parser); }, process.env.INTERVAL || 1000);
+        run(messenger, parser);
 
     } catch (e) {
         console.log(e);
-        if (intervalId) clearInterval(intervalId);
         if (messenger) messenger.close();
     }
 })();
