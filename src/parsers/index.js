@@ -6,7 +6,7 @@ const puppeteer = require('puppeteer');
 
 
 class Item {
-    constructor(id, source, name, description, categories, lang, urls, image_urls, dimensions, price, priceCurrency) {
+    constructor(id, source, name, description, categories, lang, urls, imageUrls, dimensions, price, priceCurrency) {
         this.id = id;
         this.source = source;
         this.name = name;
@@ -14,7 +14,7 @@ class Item {
         this.categories = categories;
         this.lang = lang;
         this.urls = urls;
-        this.image_urls = image_urls;
+        this.imageUrls = imageUrls;
         this.dimensions = dimensions;
         this.price = price;
         this.priceCurrency = priceCurrency;
