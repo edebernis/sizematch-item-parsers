@@ -39,8 +39,8 @@ services:
       - RABBITMQ_PORT=5672
       - RABBITMQ_USERNAME=user
       - RABBITMQ_PASSWORD=password
-      - RABBITMQ_APP_ID=sizematch-ikea-scraper
-      - CONSUMER_QUEUE_NAME=sizematch-scraper-ikea
+      - RABBITMQ_APP_ID=sizematch-item-parsers
+      - CONSUMER_QUEUE_NAME=sizematch-item-parser-ikea
       - PREFETCH_COUNT=2
       - PARSER_NAME=ikea
       - PUBLISHER_EXCHANGE_NAME=sizematch-items

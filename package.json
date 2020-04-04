@@ -1,7 +1,7 @@
 {
-    "name": "ikea-consumer",
+    "name": "sizematch-item-parsers",
     "version": "0.0.1",
-    "description": "Scrape IKEA product urls",
+    "description": "Parse items and publish them into RabbitMQ",
     "author": "Emeric de Bernis <emeric.debernis@gmail.com>",
     "main": "src/index.js",
     "private": true,
@@ -21,7 +21,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "git://github.com/edebernis/sizematch-ikea-consumer-js.git"
+        "url": "git://github.com/edebernis/sizematch-item-parsers.git"
     },
     "license": "MIT",
     "engines": {
