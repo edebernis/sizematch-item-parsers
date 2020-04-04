@@ -45,7 +45,7 @@ services:
       - PARSER_NAME=ikea
       - PUBLISHER_EXCHANGE_NAME=sizematch-items
       - PUBLISHER_ROUTING_KEY=items.normalize
-      - PUBLISHER_QUEUE_NAME=sizematch-normalizer
+      - PUBLISHER_QUEUE_NAME=sizematch-item-normalizer
       - BROWSERLESS_HOST=browserless
       - BROWSERLESS_PORT=3000
       - BROWSERLESS_TOKEN=598ec0ed-da0b-4006-b132-47120c12ce83
