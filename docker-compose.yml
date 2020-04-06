@@ -3,6 +3,7 @@ services:
   rabbitmq:
     image: "rabbitmq:3.8-management-alpine"
     ports:
+      - 5672:5672
       - 8080:15672
     restart: unless-stopped
     environment:
@@ -27,8 +28,11 @@ services:
       - EXIT_ON_HEALTH_FAILURE=true
       - DEFAULT_BLOCK_ADS=true
       - DEFAULT_IGNORE_HTTPS_ERRORS=true
-  app:
-    build: .
+  parser:
+    build:
+      context: .
+      args:
+        GITHUB_TOKEN: $GITHUB_TOKEN
     depends_on:
       - rabbitmq
     cap_add:

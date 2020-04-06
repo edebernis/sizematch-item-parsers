@@ -7,9 +7,9 @@ const parser_lib = require('./parsers');
 
 
 async function run(messenger, parser) {
-    await messenger.consume(async (msg) => {
-        const item = await parser.fetch_and_parse(JSON.parse(msg.content));
-        const isWritten = messenger.publish(item, function(err, ok) {
+    await messenger.consumeItem(async (msg, item) => {
+        await parser.fetch_and_parse(item);
+        const isWritten = messenger.publishItem(item, function(err, ok) {
             if (err !== null) {
                 console.log(err);
                 messenger.nack(msg);

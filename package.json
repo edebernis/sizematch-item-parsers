@@ -6,6 +6,7 @@
     "main": "src/index.js",
     "private": true,
     "scripts": {
+        "postinstall": "node env-dependencies.js",
         "start": "node src/index.js",
         "unit": "jest --config test/unit/jest.conf.js --coverage",
         "test": "npm run unit",
@@ -14,6 +15,11 @@
     "dependencies": {
         "amqplib": "^0.5.5",
         "puppeteer": "^2.1.1"
+    },
+    "envDependencies": {
+        "urls": [
+            "git+https://${GITHUB_TOKEN}@github.com/edebernis/sizematch-protobuf.git#sizematch-protobuf-v0.0.1-gitpkg"
+        ]
     },
     "devDependencies": {
         "jest": "^22.4.4",

@@ -10,7 +10,8 @@ RUN apk add --no-cache \
       ttf-freefont \
       nodejs \
       yarn \
-      npm
+      npm \
+      git
 
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD true
 
@@ -25,7 +26,11 @@ USER pptruser
 
 WORKDIR /app
 
+ARG GITHUB_TOKEN
+ENV GITHUB_TOKEN=$GITHUB_TOKEN
+
 COPY package*.json ./
+COPY env-dependencies.js ./
 
 RUN npm ci --only=production
 

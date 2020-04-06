@@ -2,7 +2,8 @@
 
 'use strict';
 
-var amqp = require('amqplib');
+const amqp = require('amqplib');
+const items = require('sizematch-protobuf/items_pb');
 
 
 class Messenger {
@@ -67,8 +68,10 @@ class Messenger {
         };
     }
 
-    async consume(callback) {
-        return await this.channel.consume(this.consumer.queueName, callback, {noAck: false});
+    async consumeItem(callback) {
+        return await this.channel.consume(this.consumer.queueName, async (msg) => {
+            callback(msg, items.Item.deserializeBinary(msg.content));
+        }, {noAck: false});
     }
 
     async ack(msg) {
@@ -79,12 +82,12 @@ class Messenger {
         await this.channel.nack(msg);
     }
 
-    publish(item, callback) {
-        const content = Buffer.from(JSON.stringify(item), 'utf8');
+    publishItem(item, callback) {
+        const content = Buffer.from(item.serializeBinary());
         return this.channel.publish(this.publisher.exchangeName, this.publisher.routingKey, content, {
             persistent: false,
             mandatory: true,
-            contentType: 'application/json',
+            contentType: 'application/protobuf',
             appId: this.appId
         }, callback);
     }

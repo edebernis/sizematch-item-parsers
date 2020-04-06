@@ -5,23 +5,6 @@
 const puppeteer = require('puppeteer');
 
 
-class Item {
-    constructor(id, source, name, description, categories, lang, urls, imageUrls, dimensions, price, priceCurrency) {
-        this.id = id;
-        this.source = source;
-        this.name = name;
-        this.description = description;
-        this.categories = categories;
-        this.lang = lang;
-        this.urls = urls;
-        this.imageUrls = imageUrls;
-        this.dimensions = dimensions;
-        this.price = price;
-        this.priceCurrency = priceCurrency;
-    }
-}
-
-
 class Parser {
     constructor(config) {
         this.config = config;
@@ -31,7 +14,7 @@ class Parser {
         return new parser(config);
     }
 
-    async fetch_and_parse(obj) {
+    async fetch_and_parse(item) {
         let browser, page;
 
         try {
@@ -39,7 +22,7 @@ class Parser {
                 browserWSEndpoint: `ws://${ this.config.browserlessHost }:${ this.config.browserlessPort }?token=${ this.config.browserlessToken }`
             });
             const page = await browser.newPage();
-            return await this.parse(page, obj);
+            return await this.parse(page, item);
 
         } finally {
             if (page) await page.close();
@@ -47,7 +30,7 @@ class Parser {
         }
     }
 
-    async parse(page, obj) {
+    async parse(page, item) {
         throw new Error('Not Implemented');
     }
 
@@ -85,6 +68,5 @@ async function load(parserName, config) {
 
 module.exports = {
     load: load,
-    Parser: Parser,
-    Item: Item
+    Parser: Parser
 };
