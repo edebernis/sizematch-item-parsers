@@ -3,7 +3,7 @@
 'use strict';
 
 const amqp = require('amqplib');
-const items = require('sizematch-protobuf/items_pb');
+const items = require('sizematch-protobuf-js/items/items_pb');
 
 
 class Messenger {
