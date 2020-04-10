@@ -34,12 +34,12 @@ class Parser {
         throw new Error('Not Implemented');
     }
 
-    async parseJSONLD(page) {
-        const html = await page.evaluate(() => {
-            const ld = document.querySelector('script[type="application/ld+json"]'); // jshint ignore:line
-            return ld.innerHTML;
+    async parseJSONLDs(page) {
+        const elementsHTML = await page.evaluate(() => {
+            const elements = document.querySelectorAll('script[type="application/ld+json"]'); // jshint ignore:line
+            return Array.from(elements).map(el => el.innerHTML);
         });
-        return JSON.parse(html);
+        return elementsHTML.map(html => JSON.parse(html));
     }
 
     async parseDL(page, selector) {

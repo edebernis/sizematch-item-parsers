@@ -79,7 +79,7 @@ class Messenger {
     }
 
     async nack(msg) {
-        await this.channel.nack(msg);
+        await this.channel.nack(msg, false, false); // No requeue
     }
 
     publishItem(item, callback) {

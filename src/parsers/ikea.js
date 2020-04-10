@@ -12,18 +12,24 @@ class IKEAParser extends Parser {
             waitUntil: 'networkidle2'
         });
 
-        const schemaOrg = await this.parseJSONLD(page);
         const metadata = await page.evaluate('utag_data');
         const dimensions = await this.parseDL(page, '#pip_dimensions');
-        const price = parseFloat(schemaOrg.offers.lowPrice || schemaOrg.offers.price);
+        const schemaOrgs = await this.parseJSONLDs(page);
+
+        var productSchemaOrg;
+        schemaOrgs.forEach((schema) => {
+            if (schema["@type"].toLowerCase() == "product") productSchemaOrg = schema;
+        });
+
+        const price = parseFloat(productSchemaOrg.offers.lowPrice || productSchemaOrg.offers.price);
 
         item.setId(metadata.product_ids[0]);
-        item.setName(schemaOrg.name);
-        item.setDescription(schemaOrg.description);
+        item.setName(productSchemaOrg.name);
+        item.setDescription(productSchemaOrg.description);
         item.setCategoriesList([metadata.category_local]);
-        item.setImageUrlsList(schemaOrg.image);
+        item.setImageUrlsList(productSchemaOrg.image);
         item.setPrice(price);
-        item.setPriceCurrency(schemaOrg.offers.priceCurrency);
+        item.setPriceCurrency(productSchemaOrg.offers.priceCurrency);
 
         var map = item.getDimensionsMap();
         for (let [key, value] of Object.entries(dimensions)) {
