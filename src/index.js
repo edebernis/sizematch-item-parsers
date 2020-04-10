@@ -8,17 +8,22 @@ const parser_lib = require('./parsers');
 
 async function run(messenger, parser) {
     await messenger.consumeItem(async (msg, item) => {
-        await parser.fetch_and_parse(item);
-        const isWritten = messenger.publishItem(item, function(err, ok) {
-            if (err !== null) {
-                console.log(err);
+        try {
+            await parser.fetch_and_parse(item);
+            const isWritten = messenger.publishItem(item, function(err, ok) {
+                if (err !== null) {
+                    console.log(err);
+                    messenger.nack(msg);
+                }
+                else
+                    messenger.ack(msg);
+            });
+            if (!isWritten) {
+                console.log('Publisher buffer full');
                 messenger.nack(msg);
             }
-            else
-                messenger.ack(msg);
-        });
-        if (!isWritten) {
-            console.log('Publisher buffer full');
+        } catch (e) {
+            console.log(e);
             messenger.nack(msg);
         }
     });
