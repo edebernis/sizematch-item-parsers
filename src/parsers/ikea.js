@@ -15,7 +15,7 @@ class IKEAParser extends Parser {
         const schemaOrg = await this.parseJSONLD(page);
         const metadata = await page.evaluate('utag_data');
         const dimensions = await this.parseDL(page, '#pip_dimensions');
-        const price = schemaOrg.offers.lowPrice || schemaOrg.offers.price;
+        const price = parseFloat(schemaOrg.offers.lowPrice || schemaOrg.offers.price);
 
         item.setId(metadata.product_ids[0]);
         item.setName(schemaOrg.name);
