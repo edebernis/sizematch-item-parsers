@@ -18,7 +18,7 @@
     },
     "envDependencies": {
         "urls": [
-            "git+https://${GITHUB_TOKEN}@github.com/edebernis/sizematch-protobuf.git#sizematch-protobuf-js-v0.0.7-gitpkg"
+            "git+https://${GITHUB_TOKEN}@github.com/edebernis/sizematch-protobuf.git#sizematch-protobuf-js-v0.0.9-gitpkg"
         ]
     },
     "devDependencies": {
