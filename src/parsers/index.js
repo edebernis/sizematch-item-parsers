@@ -22,7 +22,15 @@ class Parser {
                 browserWSEndpoint: `ws://${ this.config.browserlessHost }:${ this.config.browserlessPort }?token=${ this.config.browserlessToken }`
             });
             const page = await browser.newPage();
-            return await this.parse(page, item);
+
+            try {
+                return await this.parse(page, item);
+            }
+            catch (e) {
+                e.retry = false;
+                if (e.message.includes("Protocol error (Page.navigate): Target closed")) e.retry = true;
+                throw e;
+            }
 
         } finally {
             if (page) await page.close();

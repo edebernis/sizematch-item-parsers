@@ -13,18 +13,18 @@ async function run(messenger, parser) {
             const isWritten = messenger.publishItem(item, function(err, ok) {
                 if (err !== null) {
                     console.log(err);
-                    messenger.nack(msg);
+                    messenger.nack(msg, true);
                 }
                 else
                     messenger.ack(msg);
             });
             if (!isWritten) {
                 console.log('Publisher buffer full');
-                messenger.nack(msg);
+                messenger.nack(msg, true);
             }
         } catch (e) {
             console.log(e);
-            messenger.nack(msg);
+            messenger.nack(msg, e.retry); // no requeue
         }
     });
 }
