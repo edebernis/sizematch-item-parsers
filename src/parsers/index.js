@@ -29,6 +29,7 @@ class Parser {
             catch (e) {
                 e.retry = false;
                 if (e.message.includes("Protocol error (Page.navigate): Target closed")) e.retry = true;
+                if (e.message.includes("Navigation failed because browser has disconnected!")) e.retry = true;
                 throw e;
             }
 
