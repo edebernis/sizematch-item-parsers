@@ -23,8 +23,11 @@ async function run(messenger, parser) {
                 messenger.nack(msg, true);
             }
         } catch (e) {
-            console.log(e);
-            messenger.nack(msg, e.retry); // no requeue
+            if (e.retry === undefined) {
+                console.log(e);
+                e.retry = false;
+            }
+            messenger.nack(msg, e.retry);
         }
     });
 }
@@ -60,7 +63,8 @@ async function run(messenger, parser) {
             browserlessHost: process.env.BROWSERLESS_HOST,
             browserlessPort: process.env.BROWSERLESS_PORT || 3000,
             browserlessToken: process.env.BROWSERLESS_TOKEN,
-            fetchPageTimeout: process.env.FETCH_PAGE_TIMEOUT || 30000
+            fetchPageTimeout: process.env.FETCH_PAGE_TIMEOUT || 30000,
+            parseMaxRetries: process.env.PARSE_MAX_RETRIES || 3
         });
 
         process.on('SIGTERM', async () => {

@@ -5,6 +5,38 @@
 const puppeteer = require('puppeteer');
 
 
+class Evaluator {
+    constructor(page) {
+        this.page = page;
+        this.tasks = [];
+    }
+  
+    add(name, func, ...args) {
+        this.tasks.push({
+            name: name,
+            func: func,
+            args: args
+        });
+        return this;
+    }
+  
+    async execute() {
+        const serializedFunctions = JSON.stringify(this.tasks.map((obj) => {
+            obj.func = obj.func.toString();
+            return obj;
+        }));
+
+        return await this.page.evaluate((serializedFunctions) => {
+            var results = {};
+            JSON.parse(serializedFunctions).forEach((obj) => {
+                results[obj.name] = new Function('return ' + obj.func)()(...obj.args); // jshint ignore:line
+            });
+            return results;
+        }, serializedFunctions);
+    }
+} 
+
+
 class Parser {
     constructor(config) {
         this.config = config;
@@ -23,15 +55,15 @@ class Parser {
             });
             const page = await browser.newPage();
 
-            try {
-                return await this.parse(page, item);
+            return await this.parse(page, item);
+
+        } catch (e) {
+            if (e.message.includes("Protocol error (Page.navigate): Target closed") ||
+                e.message.includes("Navigation failed because browser has disconnected!")) {
+                e.retries = e.retries === undefined ? this.config.parseMaxRetries : e.retries - 1;
+                e.retry = e.retries > 0;
             }
-            catch (e) {
-                e.retry = false;
-                if (e.message.includes("Protocol error (Page.navigate): Target closed")) e.retry = true;
-                if (e.message.includes("Navigation failed because browser has disconnected!")) e.retry = true;
-                throw e;
-            }
+            throw e;
 
         } finally {
             if (page) await page.close();
@@ -39,32 +71,12 @@ class Parser {
         }
     }
 
+    evaluate(page) {
+      return new Evaluator(page);
+    }
+
     async parse(page, item) {
         throw new Error('Not Implemented');
-    }
-
-    async parseJSONLDs(page) {
-        const elementsHTML = await page.evaluate(() => {
-            const elements = document.querySelectorAll('script[type="application/ld+json"]'); // jshint ignore:line
-            return Array.from(elements).map(el => el.innerHTML);
-        });
-        return elementsHTML.map(html => JSON.parse(html));
-    }
-
-    async parseDL(page, selector) {
-        const dl = await page.evaluate((selector) => {
-            var elements = Array.from(
-                document.querySelectorAll(`${selector} dt, ${selector} dd`) // jshint ignore:line
-            );
-            return elements.map(el => el.innerText);
-        }, selector);
-
-        if (dl.length % 2 != 0) throw new Error('Invalid DL');
-
-        return dl.reduce((acc, cur, idx, src) => {
-            if (idx % 2 == 0) acc[cur] = src[idx+1];
-            return acc;
-        }, {});
     }
 }
 

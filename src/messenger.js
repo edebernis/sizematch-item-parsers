@@ -123,5 +123,6 @@ async function load(hostname, port, username, password, vhost, heartbeat, connec
     return await connect(messenger, connectionAttempts);
 }
 
-
-module.exports = {load: load};
+module.exports = {
+    load: load
+};

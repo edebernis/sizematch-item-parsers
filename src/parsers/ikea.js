@@ -3,6 +3,7 @@
 'use strict';
 
 const { Parser } = require('./');
+const utils = require('./utils');
 
 
 class IKEAParser extends Parser {
@@ -12,27 +13,22 @@ class IKEAParser extends Parser {
             waitUntil: 'networkidle2'
         });
 
-        const metadata = await page.evaluate('utag_data');
-        const dimensions = await this.parseDL(page, '#pip_dimensions');
-        const schemaOrgs = await this.parseJSONLDs(page);
+        const res = await this.evaluate(page)
+            .add("dimensions", utils.getDL, "#pip_dimensions")
+            .add("product", utils.getJSONLD, "product")
+            .add("metadata", utils.getObj, "utag_data")
+            .execute();
 
-        var productSchemaOrg;
-        schemaOrgs.forEach((schema) => {
-            if (schema["@type"].toLowerCase() == "product") productSchemaOrg = schema;
-        });
-
-        const price = parseFloat(productSchemaOrg.offers.lowPrice || productSchemaOrg.offers.price);
-
-        item.setId(metadata.product_ids[0]);
-        item.setName(productSchemaOrg.name);
-        item.setDescription(productSchemaOrg.description);
-        item.setCategoriesList([metadata.category_local]);
-        item.setImageUrlsList(productSchemaOrg.image);
-        item.setPrice(price);
-        item.setPriceCurrency(productSchemaOrg.offers.priceCurrency);
+        item.setId(res.metadata.product_ids[0]);
+        item.setName(res.product.name);
+        item.setDescription(res.product.description);
+        item.setCategoriesList([res.metadata.category_local]);
+        item.setImageUrlsList(res.product.image);
+        item.setPrice(parseFloat(res.product.offers.lowPrice || res.product.offers.price));
+        item.setPriceCurrency(res.product.offers.priceCurrency);
 
         var map = item.getDimensionsMap();
-        for (let [key, value] of Object.entries(dimensions)) {
+        for (let [key, value] of Object.entries(res.dimensions)) {
             map.set(key, value);
         }
     }
