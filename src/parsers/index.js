@@ -5,6 +5,11 @@
 const puppeteer = require('puppeteer');
 
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+
 class Evaluator {
     constructor(page) {
         this.page = page;
@@ -53,10 +58,17 @@ class Parser {
             browser = await puppeteer.connect({
                 browserWSEndpoint: `ws://${ this.config.browserlessHost }:${ this.config.browserlessPort }?token=${ this.config.browserlessToken }`
             });
+        } catch (e) {
+            if (e.message.includes("connect ECONNREFUSED")) {
+                await sleep(5000);
+                e.retry = true;
+            }
+            throw e;
+        }
+
+        try {
             const page = await browser.newPage();
-
             return await this.parse(page, item);
-
         } catch (e) {
             if (e.message.includes("Protocol error (Page.navigate): Target closed") ||
                 e.message.includes("Navigation failed because browser has disconnected!")) {

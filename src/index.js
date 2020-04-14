@@ -63,7 +63,6 @@ async function run(messenger, parser) {
             browserlessHost: process.env.BROWSERLESS_HOST,
             browserlessPort: process.env.BROWSERLESS_PORT || 3000,
             browserlessToken: process.env.BROWSERLESS_TOKEN,
-            fetchPageTimeout: process.env.FETCH_PAGE_TIMEOUT || 30000,
             parseMaxRetries: process.env.PARSE_MAX_RETRIES || 3
         });
 

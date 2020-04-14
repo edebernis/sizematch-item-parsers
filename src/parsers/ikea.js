@@ -9,7 +9,7 @@ const utils = require('./utils');
 class IKEAParser extends Parser {
     async parse(page, item) {
         await page.goto(item.getUrlsList()[0], {
-            timeout: this.config.fetchPageTimeout,
+            timeout: 30000,
             waitUntil: 'networkidle2'
         });
 
