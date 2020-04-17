@@ -16,7 +16,7 @@ class IKEAParser extends Parser {
         const res = await this.evaluate(page)
             .add("dimensions", utils.getDL, "#pip_dimensions")
             .add("product", utils.getJSONLD, "product")
-            .add("metadata", utils.getObj, "utag_data")
+            .add("metadata", utils.getObject, "utag_data")
             .execute();
 
         item.setId(res.metadata.product_ids[0]);

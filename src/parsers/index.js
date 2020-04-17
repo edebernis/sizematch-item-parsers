@@ -59,7 +59,9 @@ class Parser {
                 browserWSEndpoint: `ws://${ this.config.browserlessHost }:${ this.config.browserlessPort }?token=${ this.config.browserlessToken }`
             });
         } catch (e) {
-            if (e.message.includes("connect ECONNREFUSED")) {
+            if (e.message.includes("connect ECONNREFUSED") ||
+                e.message.includes("Unexpected server response") ||
+                e.message.includes("socket hang up")) {
                 await sleep(5000);
                 e.retry = true;
             }
@@ -71,6 +73,7 @@ class Parser {
             return await this.parse(page, item);
         } catch (e) {
             if (e.message.includes("Protocol error (Page.navigate): Target closed") ||
+                e.message.includes("Protocol error (Target.getBrowserContexts): Target closed") ||
                 e.message.includes("Navigation failed because browser has disconnected!")) {
                 e.retries = e.retries === undefined ? this.config.parseMaxRetries : e.retries - 1;
                 e.retry = e.retries > 0;

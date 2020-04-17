@@ -3,7 +3,7 @@
 'use strict';
 
 
-function getObj(obj) {
+function getObject(obj) {
     return eval(obj); // jshint ignore:line
 }
 
@@ -31,7 +31,7 @@ function getDL(selector) {
 }
 
 module.exports = {
-    getObj: getObj,
+    getObject: getObject,
     getJSONLD: getJSONLD,
     getDL: getDL
 };
