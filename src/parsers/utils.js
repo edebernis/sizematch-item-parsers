@@ -3,22 +3,34 @@
 'use strict';
 
 
-function getObject(obj) {
+function parseJSObject(obj) {
     return eval(obj); // jshint ignore:line
 }
 
-function getJSONLD(type) {
-    const results = Array.from(document.querySelectorAll('script[type="application/ld+json"]')) // jshint ignore:line
-                         .map(element => JSON.parse(element.innerHTML));
+function parseJSONListDefinition(rootType) {
+    const lists = Array.from(document.querySelectorAll('script[type="application/ld+json"]')) // jshint ignore:line
+                       .map(element => JSON.parse(element.innerHTML));
 
-    for (let i = 0; i < results.length; i++) {
-        if (results[i]["@type"].toLowerCase().includes(type.toLowerCase())) {
-            return results[i];
+    for (let i = 0; i < lists.length; i++) {
+        if (lists[i]["@type"].toLowerCase().includes(rootType.toLowerCase())) {
+            return lists[i];
         }
     }
 }
 
-function getDL(selector) {
+function parseJSONLDBreadcrumbList(jsonld) {
+    if (jsonld) return jsonld.itemListElement.map(element => element.name);
+}
+
+function parseMicrodataBreadcrumbList() {
+    const list = document.querySelector('[itemtype*="BreadcrumbList"]');
+    if (list) {
+        return Array.from(list.querySelectorAll('[itemtype*="ListItem"]'))
+                    .map((item) => item.querySelector('[itemprop="name"]').innerText)
+    }
+}
+
+function parseHTMLTagDL(selector) {
     const dl = Array.from(document.querySelectorAll(`${selector} dt, ${selector} dd`)) // jshint ignore:line
                     .map(el => el.innerText);
 
@@ -31,7 +43,9 @@ function getDL(selector) {
 }
 
 module.exports = {
-    getObject: getObject,
-    getJSONLD: getJSONLD,
-    getDL: getDL
+    parseJSObject: parseJSObject,
+    parseJSONListDefinition: parseJSONListDefinition,
+    parseJSONLDBreadcrumbList: parseJSONLDBreadcrumbList,
+    parseMicrodataBreadcrumbList: parseMicrodataBreadcrumbList,
+    parseHTMLTagDL: parseHTMLTagDL,
 };

@@ -3,6 +3,7 @@
 'use strict';
 
 const puppeteer = require('puppeteer');
+const utils = require('./utils');
 
 
 function sleep(ms) {
@@ -11,47 +12,61 @@ function sleep(ms) {
 
 
 class Evaluator {
-    constructor(page) {
-        this.page = page;
+    constructor() {
         this.tasks = [];
     }
   
-    add(name, func, ...args) {
-        this.tasks.push({
-            name: name,
-            func: func,
-            args: args
+    addTask(funcs, args) {
+        return this.tasks.push({
+            id: this.tasks.length + 1,
+            funcs: funcs.map((fn) => fn.toString()),
+            args: args,
         });
-        return this;
     }
   
-    async execute() {
-        const serializedFunctions = JSON.stringify(this.tasks.map((obj) => {
-            obj.func = obj.func.toString();
-            return obj;
-        }));
-
-        return await this.page.evaluate((serializedFunctions) => {
+    async execute(page) {
+        return await page.evaluate((serializedTasks) => {
+            const compose = (...functions) => args => functions.reduceRight((arg, fn) => fn(arg), args);
             var results = {};
-            JSON.parse(serializedFunctions).forEach((obj) => {
-                results[obj.name] = new Function('return ' + obj.func)()(...obj.args); // jshint ignore:line
+            JSON.parse(serializedTasks).forEach((task) => {
+                const functions = task.funcs.map((fn) => new Function('return ' + fn)());
+                results[task.id] = compose(...functions)(...task.args); // jshint ignore:line
             });
             return results;
-        }, serializedFunctions);
+
+        }, JSON.stringify(this.tasks));
     }
 } 
 
 
 class Parser {
-    constructor(config) {
+    constructor(source, config) {
+        this.source = source;
         this.config = config;
+        this.taskCallbacks = {};
+        this.evaluator = new Evaluator();
+
+        this.parseProduct();
+        this.parseBreadcrumbs();
     }
 
-    static async create(parser, config) {
-        return new parser(config);
+    static async create(parser, source, config) {
+        return new parser(source, config);
     }
 
     async fetch_and_parse(item) {
+        let browser, page;
+
+        try {
+            [browser, page] = await this.fetch(item);
+            await this.parse(page, item);
+        } finally {
+            if (page) await page.close();
+            if (browser) await browser.disconnect();
+        }
+    }
+
+    async fetch(item) {
         let browser, page;
 
         try {
@@ -69,8 +84,15 @@ class Parser {
         }
 
         try {
-            const page = await browser.newPage();
-            return await this.parse(page, item);
+            page = await browser.newPage();
+
+            await page.setUserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) \
+AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36");
+
+            await page.goto(item.getUrlsList()[0], {
+                timeout: this.source.products.fetchTimeout || 30000,
+                waitUntil: 'networkidle2',
+            });
         } catch (e) {
             if (e.message.includes("Protocol error (Page.navigate): Target closed") ||
                 e.message.includes("Protocol error (Target.getBrowserContexts): Target closed") ||
@@ -79,26 +101,80 @@ class Parser {
                 e.retry = e.retries > 0;
             }
             throw e;
-
-        } finally {
-            if (page) await page.close();
-            if (browser) await browser.disconnect();
         }
-    }
 
-    evaluate(page) {
-      return new Evaluator(page);
+        return [browser, page];
     }
 
     async parse(page, item) {
-        throw new Error('Not Implemented');
+        const results = await this.evaluator.execute(page);
+        for (let [taskID, data] of Object.entries(results)) {
+            this.taskCallbacks[taskID](item, data);
+        }
+    }
+
+    evaluate(func, args, callback) {
+        return this.evaluateCompose([func], args, callback)
+    }
+
+    evaluateCompose(funcs, args, callback) {
+        const taskID = this.evaluator.addTask(funcs, args);
+        this.taskCallbacks[taskID] = callback;
+    }
+
+    parseProduct() {
+        this.evaluate(
+            utils.parseJSONListDefinition,
+            ['Product'],
+            function (item, product) {
+                item.setId(product.sku);
+                item.setBrand(product.brand.name);
+                item.setName(product.name);
+                item.setDescription(product.description);
+                item.setImageUrlsList(product.image);
+                item.setPrice(parseFloat(product.offers.lowPrice || product.offers.price));
+                item.setPriceCurrency(product.offers.priceCurrency);
+                item.setColorsList(product.color ? product.color.split(',') : []);
+            }
+        );
+    }
+
+    parseBreadcrumbs() {
+        const callback = function (start, end) {
+            var setItemCategories = function (item, breadcrumbs) {
+                if (!breadcrumbs) return;
+                item.setCategoriesList(
+                    breadcrumbs.slice(
+                        start || 0,
+                        end || breadcrumbs.length,
+                    )
+                );
+            };
+            return setItemCategories;
+        }
+
+        this.evaluate(
+            utils.parseMicrodataBreadcrumbList,
+            [],
+            callback(
+                this.source.products.breadcrumbs.microdata.start,
+                this.source.products.breadcrumbs.microdata.end
+            ));
+
+        this.evaluateCompose(
+            [utils.parseJSONLDBreadcrumbList, utils.parseJSONListDefinition],
+            ["Breadcrumblist"],
+            callback(
+                this.source.products.breadcrumbs.jsonld.start,
+                this.source.products.breadcrumbs.jsonld.end
+            ));
     }
 }
 
 
-async function load(parserName, config) {
-    const parser = require(`./${ parserName }`);
-    return await Parser.create(parser.class, config);
+async function load(source, config) {
+    const parser = require(`./${ source.name }`);
+    return await Parser.create(parser.class, source, config);
 }
 
 

@@ -14,11 +14,12 @@
     },
     "dependencies": {
         "amqplib": "^0.5.5",
-        "puppeteer": "^2.1.1"
+        "puppeteer": "^2.1.1",
+        "yaml": "^1.9.2"
     },
     "envDependencies": {
         "urls": [
-            "git+https://${GITHUB_TOKEN}@github.com/edebernis/sizematch-protobuf.git#sizematch-protobuf-js-v0.0.11-gitpkg"
+            "git+https://${GITHUB_TOKEN}@github.com/edebernis/sizematch-protobuf.git#sizematch-protobuf-js-v0.0.13-gitpkg"
         ]
     },
     "devDependencies": {

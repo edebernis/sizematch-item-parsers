@@ -2,6 +2,9 @@
 
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
+const YAML = require('yaml');
 const messenger_lib = require('./messenger');
 const parser_lib = require('./parsers');
 
@@ -33,10 +36,31 @@ async function run(messenger, parser) {
 }
 
 
+function loadSource() {
+    const sourceFile = fs.readFileSync(
+        path.join(
+            process.env.SOURCES_DIRECTORY,
+            `${ process.env.SOURCE_NAME }.yml`
+        ),
+        'utf8',
+    );
+    const source =  YAML.parse(sourceFile);
+    source.name = process.env.SOURCE_NAME;
+    return source;
+}
+
+
 (async () => {
-    let messenger, parser;
+    let messenger;
 
     try {
+        const source = loadSource();
+
+        const consumerQueueName = [
+            process.env.CONSUMER_QUEUE_NAME_PREFIX,
+            process.env.SOURCE_NAME
+        ].join('-')
+
         messenger = await messenger_lib.load(
             process.env.RABBITMQ_HOST || '',
             process.env.RABBITMQ_PORT || 5672,
@@ -49,7 +73,7 @@ async function run(messenger, parser) {
         );
 
         await messenger.setupConsumer(
-            process.env.CONSUMER_QUEUE_NAME,
+            consumerQueueName,
             process.env.PREFETCH_COUNT || 1
         );
 
@@ -59,7 +83,7 @@ async function run(messenger, parser) {
             process.env.PUBLISHER_QUEUE_NAME
         );
 
-        parser = await parser_lib.load(process.env.PARSER_NAME, {
+        const parser = await parser_lib.load(source, {
             browserlessHost: process.env.BROWSERLESS_HOST,
             browserlessPort: process.env.BROWSERLESS_PORT || 3000,
             browserlessToken: process.env.BROWSERLESS_TOKEN,

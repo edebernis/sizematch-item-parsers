@@ -6,11 +6,11 @@ const { Parser } = require('./');
 const utils = require('./utils');
 
 
-class IKEAParser extends Parser {
+class LaRedouteParser extends Parser {
     constructor(source, config) {
         super(source, config);
 
-        this.parseDimensions();
+        //this.parseDimensions();
     }
 
     parseDimensions() {
@@ -25,5 +25,5 @@ class IKEAParser extends Parser {
 
 
 module.exports = {
-    class: IKEAParser
+    class: LaRedouteParser
 };

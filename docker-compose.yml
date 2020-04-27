@@ -44,9 +44,10 @@ services:
       - RABBITMQ_USERNAME=user
       - RABBITMQ_PASSWORD=password
       - RABBITMQ_APP_ID=sizematch-item-parsers
-      - CONSUMER_QUEUE_NAME=sizematch-item-parser-ikea
+      - CONSUMER_QUEUE_NAME_PREFIX=sizematch-item-parser
       - PREFETCH_COUNT=2
-      - PARSER_NAME=ikea
+      - SOURCE_NAME=laredoute
+      - SOURCES_DIRECTORY=/app/sources
       - PUBLISHER_EXCHANGE_NAME=sizematch-items
       - PUBLISHER_ROUTING_KEY=items.normalize
       - PUBLISHER_QUEUE_NAME=sizematch-item-normalizer
@@ -55,3 +56,4 @@ services:
       - BROWSERLESS_TOKEN=598ec0ed-da0b-4006-b132-47120c12ce83
     volumes:
       - ${PWD}/src:/app/src
+      - ${PWD}/../sizematch-sources:/app/sources
