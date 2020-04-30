@@ -42,10 +42,31 @@ function parseHTMLTagDL(selector) {
     }, {});
 }
 
+function parseMeta(name) {
+    return document.querySelector("meta[name="+ name +"]").content;
+}
+
+function splitArrayToDict(array, splitChars = [':', ' ']) {
+    let dict = {};
+    array.forEach((element) => {
+        element = element.trim();
+        for (let char of splitChars) {
+            let s = element.split(char);
+            if (s.length > 1) {
+                dict[s.shift().trim()] = s.join(char).trim();
+                break;
+            }
+        }
+    })
+    return dict;
+}
+
 module.exports = {
     parseJSObject: parseJSObject,
     parseJSONListDefinition: parseJSONListDefinition,
     parseJSONLDBreadcrumbList: parseJSONLDBreadcrumbList,
     parseMicrodataBreadcrumbList: parseMicrodataBreadcrumbList,
     parseHTMLTagDL: parseHTMLTagDL,
+    parseMeta: parseMeta,
+    splitArrayToDict: splitArrayToDict,
 };

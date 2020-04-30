@@ -10,16 +10,15 @@ class IKEAParser extends Parser {
     constructor(source, config) {
         super(source, config);
 
-        this.parseDimensions();
+        this.getDimensions();
     }
 
-    parseDimensions() {
-        this.evaluate(utils.parseHTMLTagDL, ['#pip_dimensions'], (item, dimensions) => {
-            var map = item.getDimensionsMap();
-            for (let [key, value] of Object.entries(dimensions)) {
-                map.set(key, value);
-            }
-        });
+    getDimensions() {
+        this.evaluate(
+            utils.parseHTMLTagDL,
+            ['#pip_dimensions'],
+            this.setItemDimensions,
+        );
     }
 }
 

@@ -10,17 +10,31 @@ class LaRedouteParser extends Parser {
     constructor(source, config) {
         super(source, config);
 
-        //this.parseDimensions();
+        this.getDescription();
+        this.getDimensions();
     }
 
-    parseDimensions() {
-        this.evaluate(utils.parseHTMLTagDL, ['#pip_dimensions'], (item, dimensions) => {
-            var map = item.getDimensionsMap();
-            for (let [key, value] of Object.entries(dimensions)) {
-                map.set(key, value);
-            }
+    getDescription() {
+        this.evaluate(utils.parseMeta, ['description'], (item, description) => {
+            item.setDescription(description);
         });
     }
+
+    getDimensions() {
+        this.evaluateCompose(
+            [utils.splitArrayToDict, parseDimensions],
+            [],
+            this.setItemDimensions,
+        );
+    }
+}
+
+
+function parseDimensions() {
+    const dscpdp = document.querySelector("dscpdp").innerText;
+    const regexp = new RegExp('.*[\u2022](.+)', 'ig');
+    return Array.from(dscpdp.matchAll(regexp))
+                .map((groups) => groups[1]);
 }
 
 

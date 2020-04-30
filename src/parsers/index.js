@@ -46,8 +46,8 @@ class Parser {
         this.taskCallbacks = {};
         this.evaluator = new Evaluator();
 
-        this.parseProduct();
-        this.parseBreadcrumbs();
+        this.getProduct();
+        this.getBreadcrumbs();
     }
 
     static async create(parser, source, config) {
@@ -88,11 +88,18 @@ class Parser {
 
             await page.setUserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) \
 AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36");
+            await page.setJavaScriptEnabled(
+                this.source.products.browsing ?
+                    this.source.products.browsing.javascriptEnabled || false : false
+            );
 
             await page.goto(item.getUrlsList()[0], {
-                timeout: this.source.products.fetchTimeout || 30000,
-                waitUntil: 'networkidle2',
+                timeout: this.source.products.browsing ?
+                    this.source.products.browsing.fetchTimeout || 30000 : 30000,
+                waitUntil: this.source.products.browsing ?
+                    this.source.products.browsing.waitUntil || 'domcontentloaded' : 'domcontentloaded',
             });
+
         } catch (e) {
             if (e.message.includes("Protocol error (Page.navigate): Target closed") ||
                 e.message.includes("Protocol error (Target.getBrowserContexts): Target closed") ||
@@ -122,7 +129,7 @@ AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36");
         this.taskCallbacks[taskID] = callback;
     }
 
-    parseProduct() {
+    getProduct() {
         this.evaluate(
             utils.parseJSONListDefinition,
             ['Product'],
@@ -139,7 +146,7 @@ AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36");
         );
     }
 
-    parseBreadcrumbs() {
+    getBreadcrumbs() {
         const callback = function (start, end) {
             var setItemCategories = function (item, breadcrumbs) {
                 if (!breadcrumbs) return;
@@ -168,6 +175,13 @@ AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36");
                 this.source.products.breadcrumbs.jsonld.start,
                 this.source.products.breadcrumbs.jsonld.end
             ));
+    }
+
+    setItemDimensions(item, dimensions) {
+        let map = item.getDimensionsMap();
+        for (let [key, value] of Object.entries(dimensions)) {
+            map.set(key, value);
+        }
     }
 }
 
