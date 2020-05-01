@@ -44,13 +44,13 @@ services:
       - RABBITMQ_USERNAME=user
       - RABBITMQ_PASSWORD=password
       - RABBITMQ_APP_ID=sizematch-item-parsers
-      - CONSUMER_QUEUE_NAME_PREFIX=sizematch-item-parser
+      - CONSUMER_QUEUE_NAME_PREFIX=sizematch-items-parser
       - PREFETCH_COUNT=2
       - SOURCE_NAME=laredoute
       - SOURCES_DIRECTORY=/app/sources
       - PUBLISHER_EXCHANGE_NAME=sizematch-items
       - PUBLISHER_ROUTING_KEY=items.normalize
-      - PUBLISHER_QUEUE_NAME=sizematch-item-normalizer
+      - PUBLISHER_QUEUE_NAME=sizematch-items-normalizer
       - BROWSERLESS_HOST=browserless
       - BROWSERLESS_PORT=3000
       - BROWSERLESS_TOKEN=598ec0ed-da0b-4006-b132-47120c12ce83
